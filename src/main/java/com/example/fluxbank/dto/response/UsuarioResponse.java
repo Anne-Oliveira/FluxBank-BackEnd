@@ -1,13 +1,17 @@
 package com.example.fluxbank.dto.response;
 
 import com.example.fluxbank.entity.Usuario;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class UsuarioResponse {
     private Long id;
+
+    @JsonProperty("nome")  // ← ADICIONE ESSA LINHA!
     private String nomeCompleto;
+
     private String cpf;
     private String cnpj;
     private String email;
