@@ -43,6 +43,47 @@ public class Conta {
 
     private String chavePix;
 
+    @Column(nullable = false)
+    private String senhaTransacao;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
+    @OneToMany(mappedBy = "contaOrigem", cascade = CascadeType.ALL)
+    private List<Transacao> transacoesEnviadas = new ArrayList<>();
+
+    @OneToMany(mappedBy = "contaDestino", cascade = CascadeType.ALL)
+    private List<Transacao> transacoesRecebidas = new ArrayList<>();
+
+    @PreUpdate
+    protected void aoAtualizar() {
+        atuaizadaEm = LocalDateTime.now();
+    }
+
+    public enum TipoConta {
+        CORRENTE,
+        POUPANCA,
+        EMPRESARIAL
+    }
+
+    public void creditar(BigDecimal valor) {
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O valor a ser creditado deve ser maior que zero.");
+        }
+        this.saldo = this.saldo.add(valor);
+    }
+
+    public void debitar(BigDecimal valor) {
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O valor a ser debitado deve ser maior que zero.");
+        }
+        if (this.saldo.compareTo(valor) < 0) {
+            throw new IllegalArgumentException("Saldo insuficiente.");
+        }
+        this.saldo = this.saldo.subtract(valor);
+    }
+
     public Long getId() {
         return id;
     }
@@ -115,6 +156,14 @@ public class Conta {
         this.chavePix = chavePix;
     }
 
+    public String getSenhaTransacao() {
+        return senhaTransacao;
+    }
+
+    public void setSenhaTransacao(String senhaTransacao) {
+        this.senhaTransacao = senhaTransacao;
+    }
+
     public Usuario getUsuario() {
         return usuario;
     }
@@ -139,27 +188,6 @@ public class Conta {
         this.transacoesRecebidas = transacoesRecebidas;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
-
-    @OneToMany(mappedBy = "contaOrigem", cascade = CascadeType.ALL)
-    private List<Transacao> transacoesEnviadas = new ArrayList<>();
-
-    @OneToMany(mappedBy = "contaDestino", cascade = CascadeType.ALL)
-    private List<Transacao> transacoesRecebidas = new ArrayList<>();
-
-    @PreUpdate
-    protected void aoAtualizar() {
-        atuaizadaEm = LocalDateTime.now();
-    }
-
-    public enum TipoConta {
-        CORRENTE,
-        POUPANCA,
-        EMPRESARIAL
-    }
-
     public static String gerarNumeroConta() {
         Random random = new Random();
         StringBuilder numero = new StringBuilder();
@@ -178,25 +206,5 @@ public class Conta {
         Random random = new Random();
         int agencia = random.nextInt(9999) + 1;
         return String.format("%04d", agencia);
-    }
-
-    public void creditar(BigDecimal valor) {
-        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O valor a ser creditado deve ser maior que zero.");
-        }
-        if (this.saldo.compareTo(valor) < 0) {
-            throw new IllegalArgumentException("Saldo insuficiente.");
-        }
-        this.saldo = this.saldo.subtract(valor);
-    }
-
-    public void debitar(java.math.BigDecimal valor) {
-        if (valor.compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O valor a ser debitado deve ser maior que zero.");
-        }
-        if (this.saldo.compareTo(valor) < 0) {
-            throw new IllegalArgumentException("Saldo insuficiente.");
-        }
-        this.saldo = this.saldo.subtract(valor);
     }
 }

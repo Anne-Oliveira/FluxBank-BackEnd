@@ -33,17 +33,18 @@ public class AutenticacaoService {
 
     @Transactional
     public AuthResponse cadastrar(CadastroRequest request) {
-        // Validar senhas
         if (!request.senha.equals(request.confirmarSenha)) {
             throw new RuntimeException("Senhas não conferem");
         }
 
-        // Validar email
+        if (request.senhaTransacao == null || request.senhaTransacao.isBlank()) {
+            throw new RuntimeException("Senha de transação é obrigatória");
+        }
+
         if (usuarioRepository.existsByEmail(request.email)) {
             throw new RuntimeException("Email já cadastrado");
         }
 
-        // Validar CPF ou CNPJ
         if (request.tipoUsuario == Usuario.TipoUsuario.PF) {
             if (request.cpf == null || request.cpf.isBlank()) {
                 throw new RuntimeException("CPF é obrigatório para Pessoa Física");
@@ -60,7 +61,6 @@ public class AutenticacaoService {
             }
         }
 
-        // Criar usuário
         Usuario usuario = new Usuario();
         usuario.setNomeCompleto(request.nomeCompleto);
         usuario.setCpf(request.cpf);
@@ -75,7 +75,6 @@ public class AutenticacaoService {
 
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
-        // Criar conta automaticamente
         Conta conta = new Conta();
         conta.setNumeroConta(gerarNumeroContaUnico());
         conta.setAgencia(Conta.gerarAgencia());
@@ -84,13 +83,13 @@ public class AutenticacaoService {
         conta.setUsuario(usuarioSalvo);
         conta.setAtiva(true);
 
-        // Definir chave Pix padrão (CPF ou CNPJ)
         conta.setChavePix(request.tipoUsuario == Usuario.TipoUsuario.PF ?
                 request.cpf : request.cnpj);
 
+        conta.setSenhaTransacao(passwordEncoder.encode(request.senhaTransacao));
+
         contaRepository.save(conta);
 
-        // Gerar token JWT usando CPF ou CNPJ
         String documento = request.tipoUsuario == Usuario.TipoUsuario.PF ?
                 request.cpf : request.cnpj;
         String token = jwtTokenProvider.gerarToken(documento);
@@ -109,25 +108,20 @@ public class AutenticacaoService {
         String documento = request.documento;
         Usuario usuario;
 
-        // Detectar automaticamente se é CPF ou CNPJ
         if (documento.length() == 11) {
-            // É CPF (Pessoa Física)
             usuario = usuarioRepository.findByCpf(documento)
                     .orElseThrow(() -> new RuntimeException("CPF não encontrado"));
         } else if (documento.length() == 14) {
-            // É CNPJ (Pessoa Jurídica)
             usuario = usuarioRepository.findByCnpj(documento)
                     .orElseThrow(() -> new RuntimeException("CNPJ não encontrado"));
         } else {
             throw new RuntimeException("Documento inválido. Use CPF (11 dígitos) ou CNPJ (14 dígitos)");
         }
 
-        // Verificar se está bloqueado
         if (usuario.estaBloqueado()) {
             throw new RuntimeException("Usuário bloqueado temporariamente. Tente novamente mais tarde.");
         }
 
-        // Verificar senha
         if (!passwordEncoder.matches(request.senha, usuario.getSenha())) {
             usuario.incrementarTentativasLogin();
             usuarioRepository.save(usuario);
@@ -139,11 +133,9 @@ public class AutenticacaoService {
             throw new RuntimeException("Senha incorreta");
         }
 
-        // Login bem-sucedido - resetar tentativas
         usuario.resetarTentativasLogin();
         usuarioRepository.save(usuario);
 
-        // Gerar token usando o documento (CPF ou CNPJ)
         String token = jwtTokenProvider.gerarToken(documento);
 
         AuthResponse response = new AuthResponse();

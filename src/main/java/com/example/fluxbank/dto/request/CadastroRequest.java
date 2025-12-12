@@ -31,4 +31,7 @@ public class CadastroRequest {
 
     @NotNull(message = "Tipo de usuário é obrigatório")
     public TipoUsuario tipoUsuario;
+
+    @Pattern(regexp = "\\d{4,6}", message = "Senha de transação deve conter apenas números e ter entre 4 e 6 dígitos")
+    public String senhaTransacao;
 }

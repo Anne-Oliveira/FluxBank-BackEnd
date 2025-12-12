@@ -2,6 +2,7 @@ package com.example.fluxbank.controllers;
 
 import com.example.fluxbank.dto.request.PixRequest;
 import com.example.fluxbank.dto.request.VerificarTransacaoRequest;
+import com.example.fluxbank.dto.response.ContaInfoResponse;
 import com.example.fluxbank.dto.response.TransacaoResponse;
 import com.example.fluxbank.services.PixService;
 import jakarta.validation.Valid;
@@ -18,6 +19,15 @@ public class PixController {
 
     public PixController(PixService pixService) {
         this.pixService = pixService;
+    }
+
+    @GetMapping("/buscar-conta")
+    public ResponseEntity<ContaInfoResponse> buscarContaPorChavePix(
+            @RequestParam String chavePix,
+            Authentication authentication) {
+
+        ContaInfoResponse response = pixService.buscarContaPorChavePix(chavePix);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/transferir")
