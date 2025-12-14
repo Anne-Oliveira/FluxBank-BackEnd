@@ -18,13 +18,18 @@ public class ContaInfoResponse {
         response.setId(conta.getId());
         response.setNumeroConta(conta.getNumeroConta());
         response.setAgencia(conta.getAgencia());
-        response.setNomeUsuario(conta.getUsuario().getNomeCompleto());
-        response.setCpf(conta.getUsuario().getCpf());
-        response.setCnpj(conta.getUsuario().getCnpj());
+
+        if (conta.getUsuario() != null) {
+            response.setNomeUsuario(conta.getUsuario().getNomeCompleto());
+            response.setCpf(conta.getUsuario().getCpf());
+            response.setCnpj(conta.getUsuario().getCnpj());
+        }
+
         response.setChavePix(conta.getChavePix());
         return response;
     }
 
+    // Getters e Setters
     public Long getId() {
         return id;
     }
