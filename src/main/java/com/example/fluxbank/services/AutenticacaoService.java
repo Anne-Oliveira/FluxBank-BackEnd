@@ -42,7 +42,7 @@ public class AutenticacaoService {
         }
 
         if (usuarioRepository.existsByEmail(request.email)) {
-            throw new RuntimeException("Email já cadastrado");
+            throw new RuntimeException("Este email já cadastrado");
         }
 
         if (request.tipoUsuario == Usuario.TipoUsuario.PF) {
